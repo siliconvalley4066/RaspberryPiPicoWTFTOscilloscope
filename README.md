@@ -7,6 +7,7 @@ The settings are controled on the touch screen of the TFT LCD and also by the 5 
 Develop environment is:<br>
 Arduino IDE 1.8.19<br>
 Raspberry Pi Pico/RP2040 by Earle F. Philhower, III version 3.4.0<br>
+CPU speed 125MHz<br>
 
 Libraries:<br>
 TFT_eSPI 2.5.0<br>
