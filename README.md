@@ -15,4 +15,4 @@ arduinoFFT by Enrique Condes 1.6.1<br>
 You need to customize the TFT_espi library by referring to the TFT_espi folder here.
 
 Schematics:<br>
-<img src="RPPicoGOscillo125.png">
+<img src="RPPicoTFTOscillo.png">
