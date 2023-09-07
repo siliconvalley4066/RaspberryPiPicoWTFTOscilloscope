@@ -1,10 +1,10 @@
 /*
- * Raspberry Pi Pico Oscilloscope using a 320x240 TFT Version 1.04
+ * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.05
  * The max realtime sampling rates are 250ksps with 2 channels and 500ksps with a channel.
  * + Pulse Generator
  * + PWM DDS Function Generator (23 waveforms)
  * + Frequency Counter (kHz)
- * Copyright (c) 2022, Siliconvalley4066
+ * Copyright (c) 2023, Siliconvalley4066
  */
 /*
  * Arduino Oscilloscope using a graphic LCD
@@ -93,6 +93,7 @@ byte item = 0;      // Default item
 short ch0_off = 0, ch1_off = 400;
 byte data[4][SAMPLES];                  // keep twice of the number of channels to make it a double buffer
 uint16_t cap_buf[NSAMP], cap_buf1[NSAMP/2];
+uint16_t payload[SAMPLES*2];
 byte odat00, odat01, odat10, odat11;    // old data buffer for erase
 byte sample=0;                          // index for double buffer
 bool fft_mode = false, pulse_mode = false, dds_mode = false, fcount_mode = false;
@@ -340,8 +341,8 @@ void scaleDataArray(byte ad_ch, int trig_point)
 {
   byte *pdata, ch_mode, range;
   short ch_off;
-  uint16_t *idata;
-  long a;
+  uint16_t *idata, *qdata;
+  long a, b;
 
   if (ad_ch == ad_ch1) {
     ch_off = ch1_off;
@@ -349,36 +350,56 @@ void scaleDataArray(byte ad_ch, int trig_point)
     range = range1;
     pdata = data[sample+1];
     idata = &cap_buf1[trig_point];
+    qdata = payload+SAMPLES;
   } else {
     ch_off = ch0_off;
     ch_mode = ch0_mode;
     range = range0;
     pdata = data[sample+0];
     idata = &cap_buf[trig_point];
+    qdata = payload;
   }
   for (int i = 0; i < SAMPLES; i++) {
-    a = ((*idata++ + ch_off) * VREF[range] + 2048) >> 12;
+    a = ((*idata + ch_off) * VREF[range] + 2048) >> 12;
     if (a > LCD_YMAX) a = LCD_YMAX;
     else if (a < 0) a = 0;
     if (ch_mode == MODE_INV)
       a = LCD_YMAX - a;
     *pdata++ = (byte) a;
+    b = ((*idata++ + ch_off) * VREF[range] + 101) / 201;
+    if (b > 4095) b = 4095;
+    else if (b < 0) b = 0;
+    if (ch_mode == MODE_INV)
+      b = 4095 - b;
+    *qdata++ = (int16_t) b;
   }
 }
 
-byte adRead(byte ch, byte mode, int off)
+byte adRead(byte ch, byte mode, int off, int i)
 {
   if (ch == ad_ch1) {
     adc_select_input(1);
   } else {
     adc_select_input(0);
   }
-  long a = adc_read();
-  a = ((a+off)*VREF[ch == ad_ch0 ? range0 : range1]+2048) >> 12;
+  int16_t aa = adc_read();
+  long a = (((long)aa+off)*VREF[ch == ad_ch0 ? range0 : range1]+2048) >> 12;
   if (a > LCD_YMAX) a = LCD_YMAX;
   else if (a < 0) a = 0;
   if (mode == MODE_INV)
-    return LCD_YMAX - a;
+    a = LCD_YMAX - a;
+  long b = (((long)aa+off)*VREF[ch == ad_ch0 ? range0 : range1] + 101) / 201;
+  if (b > 4095) b = 4095;
+  else if (b < 0) b = 0;
+  if (mode == MODE_INV)
+    b = 4095 - b;
+  if (ch == ad_ch1) {
+    cap_buf1[i] = aa;
+    payload[i+SAMPLES] = b;
+  } else {
+    cap_buf[i] = aa;
+    payload[i] = b;
+  }
   return a;
 }
 
@@ -484,8 +505,11 @@ void loop() {
       odat10 = odat11;      // save next previous data ch1
       odat01 = data[0][i];  // save previous data ch0
       odat11 = data[1][i];  // save previous data ch1
-      if (ch0_mode!=MODE_OFF) data[0][i] = adRead(ad_ch0, ch0_mode, ch0_off);
-      if (ch1_mode!=MODE_OFF) data[1][i] = adRead(ad_ch1, ch1_mode, ch1_off);
+      if (ch0_mode != MODE_OFF) data[0][i] = adRead(ad_ch0, ch0_mode, ch0_off, i);
+      if (ch1_mode != MODE_OFF) data[1][i] = adRead(ad_ch1, ch1_mode, ch1_off, i);
+      if (ch0_mode == MODE_OFF) payload[0] = -1;
+      if (ch1_mode == MODE_OFF) payload[SAMPLES] = -1;
+      rp2040.fifo.push_nb(1);   // notify Websocket server core
       ClearAndDrawDot(i);
     }
     DrawGrid(disp_leng);  // right side grid   
@@ -517,7 +541,11 @@ void draw_screen() {
     DrawGrid();
     ClearAndDrawGraph();
     DrawText();
+    if (ch0_mode == MODE_OFF) payload[0] = -1;
+    if (ch1_mode == MODE_OFF) payload[SAMPLES] = -1;
   }
+  rp2040.fifo.push_nb(1);   // notify Websocket server core
+  delay(10);    // wait Web task to send it (adhoc fix)
 }
 
 #define textINFO 214
@@ -649,8 +677,10 @@ void plotFFT() {
   FFT.ComplexToMagnitude(vReal, vImag, FFT_N);            // Compute magnitudes
   newplot = data[sample];
   lastplot = data[clear];
+  payload[0] = 0;
   for (int i = 1; i < FFT_N/2; i++) {
     float db = log10(vReal[i]);
+    payload[i] = constrain((int)(1024.0 * (db - 1.6)), 0, 4095);
     int dat = constrain((int)(50.0 * (db - 1.6)), 0, ylim);
     display.drawFastVLine(i * 2, ylim - lastplot[i], lastplot[i], BGCOLOR); // erase old
     display.drawFastVLine(i * 2, ylim - dat, dat, CH1COLOR);
@@ -666,6 +696,9 @@ void draw_scale() {
   display.setCursor(0, ylim); display.print("0Hz"); 
   fhref = (float)HREF[rate];
   nyquist = 5.0e6 / fhref; // Nyquist frequency
+  long inyquist = nyquist;
+  payload[FFT_N/2] = (short) (inyquist / 1000);
+  payload[FFT_N/2+1] = (short) (inyquist % 1000);
   if (nyquist > 999.0) {
     nyquist = nyquist / 1000.0;
     if (nyquist > 99.5) {
@@ -806,14 +839,3 @@ void loadEEPROM() { // Read setting values from EEPROM (abnormal values will be 
     set_default();
 }
 #endif
-
-void setup1() {
-//  Serial.begin(115200);
-//  delay(4000);
-//  Serial.println("core1:start....");
-}
-
-void loop1() {
-//  Serial.println(millis());
-  delay(1000);
-}

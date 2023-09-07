@@ -63,6 +63,12 @@ void rotate_wave(bool fwd) {
   }
   wp = (unsigned char *) wavetable[wave_id];
 }
+
+void set_wave(int id) {
+  wave_id = id;
+  wp = (unsigned char *) wavetable[wave_id];
+}
+
 //******************************************************************
 // timer2 setup
 // set prscaler to 8, PWM mode, 125000000/8/256 = 61035.15625 Hz clock
