@@ -132,7 +132,7 @@ void setup(){
 //  uint16_t calData[5] = { 358, 3534, 310, 3481, 7 };  // rotation 1
   display.setTouch(calData);
 
-  Serial.begin(115200);
+//  Serial.begin(115200);
 //  delay(3000);
 //  Serial.println("core0:start....");
 //  multicore_launch_core1(loop1);

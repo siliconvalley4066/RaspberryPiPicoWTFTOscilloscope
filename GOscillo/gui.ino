@@ -128,7 +128,6 @@ void CheckTouch() {
     default:                    // do nothing
       if (fft_mode == true) {
         wfft = false;
-        display.fillScreen(BGCOLOR);
       }
       break;
     }
@@ -212,7 +211,6 @@ void low_touch_func(uint16_t x) {
   if (item == SEL_FUNC) {
     if (x < 60) {             // FFT
       wfft = true;
-      display.fillScreen(BGCOLOR);
     } else if (x < 120) {     // PWM
       item = SEL_PWM;
       clear_bottom_text();                          // clear bottom text area
