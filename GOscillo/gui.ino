@@ -392,6 +392,9 @@ void DrawText_big() {
   } else if (item == SEL_OFST2) {
     set_menu_color(SEL_OFST2);
     display.print("POS2");
+  } else if (item == SEL_OFST2) {
+    set_menu_color(SEL_TGLVL);
+    display.print("TGLVL");
   } else {
     display.setTextColor(TFT_DARKGREY, BGCOLOR);
     display.print("VPOS");
