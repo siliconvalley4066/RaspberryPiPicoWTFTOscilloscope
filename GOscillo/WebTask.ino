@@ -1,3 +1,4 @@
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
 #include <WiFi.h>
 #include <WebServer.h>
 #include <WebSocketsServer.h> // arduinoWebSockets library
@@ -775,3 +776,4 @@ void loop1() {
   webSocket.loop();
   delay(1);
 }
+#endif

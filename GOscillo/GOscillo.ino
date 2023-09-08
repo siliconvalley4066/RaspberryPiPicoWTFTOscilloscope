@@ -22,7 +22,9 @@ TFT_eSPI display = TFT_eSPI();
 
 #define GPIN1 (22)
 #define BUTTON5DIR
+#ifndef ARDUINO_ARCH_MBED_RP2040
 #define EEPROM_START 0
+#endif
 #ifdef EEPROM_START
 #include <EEPROM.h>
 #endif
@@ -93,7 +95,9 @@ byte item = 0;      // Default item
 short ch0_off = 0, ch1_off = 400;
 byte data[4][SAMPLES];                  // keep twice of the number of channels to make it a double buffer
 uint16_t cap_buf[NSAMP], cap_buf1[NSAMP/2];
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
 uint16_t payload[SAMPLES*2];
+#endif
 byte odat00, odat01, odat10, odat11;    // old data buffer for erase
 byte sample=0;                          // index for double buffer
 bool fft_mode = false, pulse_mode = false, dds_mode = false, fcount_mode = false;
@@ -350,14 +354,18 @@ void scaleDataArray(byte ad_ch, int trig_point)
     range = range1;
     pdata = data[sample+1];
     idata = &cap_buf1[trig_point];
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
     qdata = payload+SAMPLES;
+#endif
   } else {
     ch_off = ch0_off;
     ch_mode = ch0_mode;
     range = range0;
     pdata = data[sample+0];
     idata = &cap_buf[trig_point];
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
     qdata = payload;
+#endif
   }
   for (int i = 0; i < SAMPLES; i++) {
     a = ((*idata + ch_off) * VREF[range] + 2048) >> 12;
@@ -366,12 +374,16 @@ void scaleDataArray(byte ad_ch, int trig_point)
     if (ch_mode == MODE_INV)
       a = LCD_YMAX - a;
     *pdata++ = (byte) a;
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
     b = ((*idata++ + ch_off) * VREF[range] + 101) / 201;
     if (b > 4095) b = 4095;
     else if (b < 0) b = 0;
     if (ch_mode == MODE_INV)
       b = 4095 - b;
     *qdata++ = (int16_t) b;
+#else
+    ++idata;
+#endif
   }
 }
 
@@ -388,17 +400,23 @@ byte adRead(byte ch, byte mode, int off, int i)
   else if (a < 0) a = 0;
   if (mode == MODE_INV)
     a = LCD_YMAX - a;
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
   long b = (((long)aa+off)*VREF[ch == ad_ch0 ? range0 : range1] + 101) / 201;
   if (b > 4095) b = 4095;
   else if (b < 0) b = 0;
   if (mode == MODE_INV)
     b = 4095 - b;
+#endif
   if (ch == ad_ch1) {
     cap_buf1[i] = aa;
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
     payload[i+SAMPLES] = b;
+#endif
   } else {
     cap_buf[i] = aa;
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
     payload[i] = b;
+#endif
   }
   return a;
 }
@@ -507,9 +525,11 @@ void loop() {
       odat11 = data[1][i];  // save previous data ch1
       if (ch0_mode != MODE_OFF) data[0][i] = adRead(ad_ch0, ch0_mode, ch0_off, i);
       if (ch1_mode != MODE_OFF) data[1][i] = adRead(ad_ch1, ch1_mode, ch1_off, i);
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
       if (ch0_mode == MODE_OFF) payload[0] = -1;
       if (ch1_mode == MODE_OFF) payload[SAMPLES] = -1;
       rp2040.fifo.push_nb(1);   // notify Websocket server core
+#endif
       ClearAndDrawDot(i);
     }
     DrawGrid(disp_leng);  // right side grid   
@@ -541,10 +561,14 @@ void draw_screen() {
     DrawGrid();
     ClearAndDrawGraph();
     DrawText();
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
     if (ch0_mode == MODE_OFF) payload[0] = -1;
     if (ch1_mode == MODE_OFF) payload[SAMPLES] = -1;
+#endif
   }
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
   rp2040.fifo.push_nb(1);   // notify Websocket server core
+#endif
   delay(10);    // wait Web task to send it (adhoc fix)
 }
 
@@ -677,10 +701,14 @@ void plotFFT() {
   FFT.ComplexToMagnitude(vReal, vImag, FFT_N);            // Compute magnitudes
   newplot = data[sample];
   lastplot = data[clear];
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
   payload[0] = 0;
+#endif
   for (int i = 1; i < FFT_N/2; i++) {
     float db = log10(vReal[i]);
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
     payload[i] = constrain((int)(1024.0 * (db - 1.6)), 0, 4095);
+#endif
     int dat = constrain((int)(50.0 * (db - 1.6)), 0, ylim);
     display.drawFastVLine(i * 2, ylim - lastplot[i], lastplot[i], BGCOLOR); // erase old
     display.drawFastVLine(i * 2, ylim - dat, dat, CH1COLOR);
@@ -696,9 +724,11 @@ void draw_scale() {
   display.setCursor(0, ylim); display.print("0Hz"); 
   fhref = (float)HREF[rate];
   nyquist = 5.0e6 / fhref; // Nyquist frequency
+#ifdef ARDUINO_RASPBERRY_PI_PICO_W
   long inyquist = nyquist;
   payload[FFT_N/2] = (short) (inyquist / 1000);
   payload[FFT_N/2+1] = (short) (inyquist % 1000);
+#endif
   if (nyquist > 999.0) {
     nyquist = nyquist / 1000.0;
     if (nyquist > 99.5) {
