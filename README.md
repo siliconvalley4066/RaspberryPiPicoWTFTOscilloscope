@@ -5,7 +5,7 @@ This displays an oscilloscope screen on a 320x240 TFT LCD and also on the WEB pa
 The settings are controled on the touch screen of the TFT LCD and by the 5 direction switch and also on the WEB page.
 You can view the oscilloscope screen on the WEB browser of the PC or the tablet or the smartphone.
 
-A branch noWEB is available for Raspberry Pi Pico (not W) without WEB functions.
+The source codes can be compiled for Raspberry Pi Pico (not W) without WEB functions.
 
 For WEB operations, edit the source code WebTask.ino and replace your Access Point and the password.
 <pre>
