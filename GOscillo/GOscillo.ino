@@ -447,8 +447,6 @@ void loop() {
     adc_set_round_robin(0); // de-activate round robin
     set_trigger_ad();
     auto_time = pow(10, rate / 3);
-    if (rate < 6)
-      auto_time *= 10;
     if (trig_mode != TRIG_SCAN) {
       unsigned long st = millis();
       oad = adc_read();
