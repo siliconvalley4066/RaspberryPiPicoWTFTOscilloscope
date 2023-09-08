@@ -22,7 +22,9 @@ TFT_eSPI display = TFT_eSPI();
 
 #define GPIN1 (22)
 #define BUTTON5DIR
+#ifndef ARDUINO_ARCH_MBED_RP2040
 #define EEPROM_START 0
+#endif
 #ifdef EEPROM_START
 #include <EEPROM.h>
 #endif
