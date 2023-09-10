@@ -566,8 +566,8 @@ void draw_screen() {
   }
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
   rp2040.fifo.push_nb(1);   // notify Websocket server core
-#endif
   delay(10);    // wait Web task to send it (adhoc fix)
+#endif
 }
 
 #define textINFO 214
