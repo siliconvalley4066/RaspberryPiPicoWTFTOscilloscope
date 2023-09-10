@@ -104,7 +104,7 @@ bool fft_mode = false, pulse_mode = false, dds_mode = false, fcount_mode = false
 byte info_mode = 3; // Text information display mode
 int trigger_ad;
 float sys_clk;      // System clock is typically 125MHz, eventually 133MHz
-bool wfft;
+volatile bool wfft, wdds;
 
 #define LEFTPIN   18  // LEFT
 #define RIGHTPIN  19  // RIGHT
@@ -148,6 +148,7 @@ void setup(){
   set_default();
 #endif
   wfft = fft_mode;
+  wdds = dds_mode;
   display.fillScreen(BGCOLOR);
 //  DrawGrid();
 //  DrawText();
@@ -544,6 +545,14 @@ void loop() {
 #ifdef EEPROM_START
   saveEEPROM();                         // save settings to EEPROM if necessary
 #endif
+  if (wdds != dds_mode) {
+    dds_mode = wdds;
+    if (dds_mode) {
+      dds_setup();
+    } else {
+      dds_close();
+    }
+  }
 }
 
 void draw_screen() {
