@@ -62,7 +62,7 @@ const long VREF[] = {83, 165, 413, 825, 1650}; // reference voltage 3.3V ->  82.
                                         //                        -> 825 : 100mV/div
                                         //                        -> 1650 : 50mV/div
 //const int MILLIVOL_per_dot[] = {100, 50, 20, 10, 5}; // mV/dot
-const int ac_offset[] PROGMEM = {104, -204, -388, -450, -481};
+const int ac_offset[] PROGMEM = {3072, 512, -1043, -1552, -1804}; // for Web
 const int MODE_ON = 0;
 const int MODE_INV = 1;
 const int MODE_OFF = 2;
