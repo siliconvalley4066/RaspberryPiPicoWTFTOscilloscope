@@ -1,5 +1,5 @@
 /*
- * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.05
+ * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.06
  * The max realtime sampling rates are 250ksps with 2 channels and 500ksps with a channel.
  * + Pulse Generator
  * + PWM DDS Function Generator (23 waveforms)
@@ -546,12 +546,12 @@ void loop() {
   saveEEPROM();                         // save settings to EEPROM if necessary
 #endif
   if (wdds != dds_mode) {
-    dds_mode = wdds;
-    if (dds_mode) {
+    if (wdds) {
       dds_setup();
     } else {
       dds_close();
     }
+    dds_mode = wdds;
   }
 }
 
