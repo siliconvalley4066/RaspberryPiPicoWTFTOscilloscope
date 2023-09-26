@@ -1,5 +1,5 @@
 /*
- * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.06
+ * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.07
  * The max realtime sampling rates are 250ksps with 2 channels and 500ksps with a channel.
  * + Pulse Generator
  * + PWM DDS Function Generator (23 waveforms)
@@ -12,13 +12,18 @@
  * Copyright (c) 2009, Noriaki Mitsunaga
  */
 
+//#define NOLCD
+
+#ifndef NOLCD
 #include <SPI.h>
 #include "TFT_eSPI.h"
+TFT_eSPI display = TFT_eSPI();
+#endif
+
 #include "hardware/clocks.h"
 #include "hardware/adc.h"
 //#include "pico/multicore.h"
 
-TFT_eSPI display = TFT_eSPI();
 
 #define GPIN1 (22)
 #define BUTTON5DIR
@@ -131,11 +136,14 @@ void setup(){
   pinMode(LED_BUILTIN, OUTPUT);     // sets the digital pin as output
 //  pinMode(CALPIN, OUTPUT);          // PWM out
 //  pinMode(2, OUTPUT);               // DDS out
+#ifndef NOLCD
   display.init();                    // initialise the library
   display.setRotation(3);
   uint16_t calData[5] = { 323, 3532, 343, 3449, 1 };  // rotation 3
 //  uint16_t calData[5] = { 358, 3534, 310, 3481, 7 };  // rotation 1
   display.setTouch(calData);
+  display.fillScreen(BGCOLOR);
+#endif
 
 //  Serial.begin(115200);
 //  delay(3000);
@@ -149,7 +157,6 @@ void setup(){
 #endif
   wfft = fft_mode;
   wdds = dds_mode;
-  display.fillScreen(BGCOLOR);
 //  DrawGrid();
 //  DrawText();
 //  display.display();
@@ -163,6 +170,7 @@ void setup(){
   clock_configure_gpin(clk_gpout0, GPIN1, 1000, 1000);  // frequency count on GPIO22
 }
 
+#ifndef NOLCD
 #ifdef DOT_GRID
 void DrawGrid() {
   int disp_leng;
@@ -205,8 +213,10 @@ void DrawGrid() {
   }
 }
 #endif
+#endif
 
 void DrawText() {
+#ifndef NOLCD
   if (info_mode & 8)
     return;
   if (info_mode & 4) {
@@ -214,6 +224,7 @@ void DrawText() {
   } else {
     display.setTextSize(1); // Small
   }
+#endif
 
 //  if (info_mode && Start) {
   if (info_mode & 3) {
@@ -223,11 +234,14 @@ void DrawText() {
     if (info_mode & 2)
       measure_voltage();
   }
+#ifndef NOLCD
   DrawText_big();
   if (!fft_mode)
     draw_trig_level(GRIDCOLOR); // draw trig_lv mark
+#endif
 }
 
+#ifndef NOLCD
 void draw_trig_level(int color) { // draw trig_lv mark
   int x, y;
 
@@ -341,6 +355,7 @@ void ClearAndDrawDot(int i) {
 #endif
   DrawGrid(i);
 }
+#endif
 
 void scaleDataArray(byte ad_ch, int trig_point)
 {
@@ -508,7 +523,9 @@ void loop() {
           break;
       }
       if (rate<RATE_ROLL) { // sampling rate has been changed
+#ifndef NOLCD
         display.fillScreen(BGCOLOR);
+#endif
         break;
       }
       st += r;
@@ -529,9 +546,13 @@ void loop() {
       if (ch1_mode == MODE_OFF) payload[SAMPLES] = -1;
       rp2040.fifo.push_nb(1);   // notify Websocket server core
 #endif
+#ifndef NOLCD
       ClearAndDrawDot(i);
+#endif
     }
+#ifndef NOLCD
     DrawGrid(disp_leng);  // right side grid   
+#endif
     // Serial.println(millis()-st0);
     digitalWrite(LED_BUILTIN, LOW);
 //    DrawGrid();
@@ -559,14 +580,18 @@ void draw_screen() {
 //  display.fillScreen(BGCOLOR);
   if (wfft != fft_mode) {
     fft_mode = wfft;
+#ifndef NOLCD
     display.fillScreen(BGCOLOR);
+#endif
   }
   if (fft_mode) {
     DrawText();
     plotFFT();
   } else {
+#ifndef NOLCD
     DrawGrid();
     ClearAndDrawGraph();
+#endif
     DrawText();
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
     if (ch0_mode == MODE_OFF) payload[0] = -1;
@@ -584,6 +609,7 @@ void measure_frequency() {
   int x1, x2;
   byte y;
   freqDuty();
+#ifndef NOLCD
   display.setTextColor(TXTCOLOR, BGCOLOR);
   if (info_mode & 4) {
     x1 = textINFO, x2 = x1+12;      // Big
@@ -604,6 +630,7 @@ void measure_frequency() {
   if (fft_mode) return;
   TextBG(&y, x2, 7);
   display.print(waveDuty);  display.print('%');
+#endif
 }
 
 void measure_voltage() {
@@ -627,12 +654,14 @@ void measure_voltage() {
   float vavr = VRF * ((dave * 409.6) / VREF[range0] - ch0_off) / 4096.0;
   float vmax = VRF * advalue(dmax, VREF[range0], ch0_mode, ch0_off) / 4096.0;
   float vmin = VRF * advalue(dmin, VREF[range0], ch0_mode, ch0_off) / 4096.0;
+#ifndef NOLCD
   TextBG(&y, x, 8);
   display.print("max");  display.print(vmax); if (vmax >= 0.0) display.print('V');
   TextBG(&y, x, 8);
   display.print("avr");  display.print(vavr); if (vavr >= 0.0) display.print('V');
   TextBG(&y, x, 8);
   display.print("min");  display.print(vmin); if (vmin >= 0.0) display.print('V');
+#endif
 }
 
 void sample_dual_us(unsigned int r) { // dual channel. r > 67
@@ -716,10 +745,12 @@ void plotFFT() {
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
     payload[i] = constrain((int)(1024.0 * (db - 1.6)), 0, 4095);
 #endif
+#ifndef NOLCD
     int dat = constrain((int)(50.0 * (db - 1.6)), 0, ylim);
     display.drawFastVLine(i * 2, ylim - lastplot[i], lastplot[i], BGCOLOR); // erase old
     display.drawFastVLine(i * 2, ylim - dat, dat, CH1COLOR);
     newplot[i] = dat;
+#endif
   }
   draw_scale();
 }
@@ -727,8 +758,10 @@ void plotFFT() {
 void draw_scale() {
   int ylim = 204;
   float fhref, nyquist;
+#ifndef NOLCD
   display.setTextColor(TXTCOLOR);
   display.setCursor(0, ylim); display.print("0Hz"); 
+#endif
   fhref = (float)HREF[rate];
   nyquist = 5.0e6 / fhref; // Nyquist frequency
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
@@ -736,6 +769,7 @@ void draw_scale() {
   payload[FFT_N/2] = (short) (inyquist / 1000);
   payload[FFT_N/2+1] = (short) (inyquist % 1000);
 #endif
+#ifndef NOLCD
   if (nyquist > 999.0) {
     nyquist = nyquist / 1000.0;
     if (nyquist > 99.5) {
@@ -753,6 +787,7 @@ void draw_scale() {
     display.setCursor(116, ylim); display.print(nyquist/2,0);
     display.setCursor(238, ylim); display.print(nyquist,0);
   }
+#endif
 }
 
 #ifdef EEPROM_START

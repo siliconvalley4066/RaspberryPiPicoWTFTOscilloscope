@@ -98,6 +98,7 @@ void update_frq(int diff) {
   setduty();
 }
 
+#ifndef NOLCD
 void disp_pulse_frq(void) {
   float freq;        // 14.90Hz <= freq <= 62.5MHz
   int divide = range_div[p_range];
@@ -133,6 +134,7 @@ void disp_pulse_dty(void) {
 //  display.print(duty*100.0/256.0, 1); display.print('%');
   display.print(duty*0.390625, 1); display.print("%  ");
 }
+#endif
 
 void setCounter(int divide) {
   if (divide == 1) {
