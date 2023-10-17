@@ -38,3 +38,5 @@ in the file GOscillo.ino.
 
 Schematics:<br>
 <img src="RPPicoTFTOscillo.png">
+
+Other conections are same as OLED version: https://github.com/siliconvalley4066/RaspberryPiPicoWOLEDOscilloscope
