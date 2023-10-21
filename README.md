@@ -40,3 +40,6 @@ Schematics:<br>
 <img src="RPPicoTFTOscillo.png">
 
 Other conections are same as OLED version: https://github.com/siliconvalley4066/RaspberryPiPicoWOLEDOscilloscope
+
+Description is here, although it is written in Japanese language:
+http://harahore.g2.xrea.com/RaspberryPiPico/RPPicoTFTOscillo.html
