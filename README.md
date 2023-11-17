@@ -1,7 +1,7 @@
 # RaspberryPiPicoWTFTOscilloscope
 Raspberry Pi Pico W Oscilloscope for 320x240 TFT LCD and wireless WEB display
 
-<img src="RPPicoWEBOLED.png">
+<img src="RPPicoWEBTFT.png">
 
 This displays an oscilloscope screen on a 320x240 TFT LCD and also on the WEB page simultaneusly.
 The settings are controled on the touch screen of the TFT LCD and by the 5 direction switch and also on the WEB page.
