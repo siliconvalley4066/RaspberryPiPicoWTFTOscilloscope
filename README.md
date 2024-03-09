@@ -26,8 +26,8 @@ Raspberry Pi Pico/RP2040 by Earle F. Philhower, III version 3.4.0<br>
 CPU speed 125MHz<br>
 
 Libraries:<br>
-TFT_eSPI 2.5.0<br>
-arduinoFFT by Enrique Condes 1.6.1<br>
+TFT_eSPI 2.5.43<br>
+arduinoFFT by Enrique Condes 2.0.0<br>
 arduinoWebSockets from https://github.com/Links2004/arduinoWebSockets<br>
 
 You need to customize the TFT_espi library by referring to the TFT_espi folder here.
