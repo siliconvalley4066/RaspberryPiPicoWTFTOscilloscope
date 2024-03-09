@@ -1,6 +1,6 @@
 /*
- * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.10
- * The max realtime sampling rates are 250ksps with 2 channels and 500ksps with a channel.
+ * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.11
+ * The max software loop sampling rates are 250ksps with 2 channels and 500ksps with a channel.
  * + Pulse Generator
  * + PWM DDS Function Generator (23 waveforms)
  * + Frequency Counter (kHz)
@@ -35,7 +35,9 @@ TFT_eSPI display = TFT_eSPI();
 #endif
 #include "arduinoFFT.h"
 #define FFT_N 256
-arduinoFFT FFT = arduinoFFT();  // Create FFT object
+double vReal[FFT_N]; // Real part array, actually float type
+double vImag[FFT_N]; // Imaginary part array
+ArduinoFFT<double> FFT = ArduinoFFT<double>(vReal, vImag, FFT_N, 1.0);  // Create FFT object
 
 float waveFreq[2];             // frequency (Hz)
 float waveDuty[2];             // duty ratio (%)
@@ -502,7 +504,7 @@ void loop() {
       }
     }
   }
-  
+
   // sample and draw depending on the sampling rate
   if (rate < RATE_ROLL && Start) {
     // change the index for the double buffer
@@ -737,9 +739,6 @@ void sample_dual_ms(unsigned int r) { // dual channel. r > 500
   scaleDataArray(ad_ch1, 0);
 }
 
-double vReal[FFT_N]; // Real part array, actually float type
-double vImag[FFT_N]; // Imaginary part array
-
 void plotFFT() {
   byte *lastplot, *newplot;
   int ylim = 200;
@@ -749,10 +748,10 @@ void plotFFT() {
     vReal[i] = cap_buf[i];
     vImag[i] = 0.0;
   }
-  FFT.DCRemoval(vReal, FFT_N);
-  FFT.Windowing(vReal, FFT_N, FFT_WIN_TYP_HANN, FFT_FORWARD); // Weigh data
-  FFT.Compute(vReal, vImag, FFT_N, FFT_FORWARD);          // Compute FFT
-  FFT.ComplexToMagnitude(vReal, vImag, FFT_N);            // Compute magnitudes
+  FFT.dcRemoval();
+  FFT.windowing(FFTWindow::Hann, FFTDirection::Forward);  // Weigh data
+  FFT.compute(FFTDirection::Forward);                     // Compute FFT
+  FFT.complexToMagnitude();                               // Compute magnitudes
   newplot = data[sample];
   lastplot = data[clear];
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
@@ -780,7 +779,7 @@ void draw_scale() {
   display.setTextColor(TXTCOLOR);
   display.setCursor(0, ylim); display.print("0Hz"); 
 #endif
-  fhref = (float)HREF[rate];
+  fhref = freqhref();
   nyquist = 5.0e6 / fhref; // Nyquist frequency
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
   long inyquist = nyquist;
@@ -806,6 +805,10 @@ void draw_scale() {
     display.setCursor(238, ylim); display.print(nyquist,0);
   }
 #endif
+}
+
+float freqhref() {
+  return (float) HREF[rate];
 }
 
 #ifdef EEPROM_START
