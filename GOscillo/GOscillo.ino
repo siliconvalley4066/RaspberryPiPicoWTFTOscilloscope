@@ -1,5 +1,5 @@
 /*
- * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.20
+ * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.21
  * The max software loop sampling rates are 250ksps with 2 channels and 500ksps with a channel.
  * + Pulse Generator
  * + PWM DDS Function Generator (23 waveforms)
