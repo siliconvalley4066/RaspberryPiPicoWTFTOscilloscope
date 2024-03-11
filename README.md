@@ -38,6 +38,10 @@ For WEB only display, in case no LCD display is connected, un-comment
 </pre>
 in the file GOscillo.ino.
 
+5usec/div range is 10 times magnification at 500ksps.<br>
+10usec/div range is 5 times magnification at 500ksps.<br>
+The magnification applies sin(x)/x interpolation.
+
 Schematics:<br>
 <img src="RPPicoTFTOscillo.png">
 
