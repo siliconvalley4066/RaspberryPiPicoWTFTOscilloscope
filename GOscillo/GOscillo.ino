@@ -1,5 +1,5 @@
 /*
- * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.21
+ * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.22
  * The max software loop sampling rates are 250ksps with 2 channels and 500ksps with a channel.
  * + Pulse Generator
  * + PWM DDS Function Generator (23 waveforms)
@@ -83,7 +83,6 @@ const int TRIG_E_UP = 0;
 const int TRIG_E_DN = 1;
 #define RATE_MIN 0
 #define RATE_MAX 18
-#define RATE_ILV 2
 #define RATE_DMA 4
 #define RATE_DUAL 3
 #define RATE_ROLL 12
@@ -392,6 +391,7 @@ void scaleDataArray(byte ad_ch, int trig_point)
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
     qdata = rdata = payload+SAMPLES;
 #endif
+    ch = 1;
   } else {
     ch_off = ch0_off;
     ch_mode = ch0_mode;
@@ -401,6 +401,7 @@ void scaleDataArray(byte ad_ch, int trig_point)
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
     qdata = rdata = payload;
 #endif
+    ch = 0;
   }
   for (int i = 0; i < SAMPLES; i++) {
     a = ((*idata + ch_off) * VREF[range] + 2048) >> 12;
@@ -421,15 +422,15 @@ void scaleDataArray(byte ad_ch, int trig_point)
 #endif
   }
   if (rate == 0) {
-    mag10(data[sample+0]);
+    mag(data[sample+ch], 10); // x10 magnification for display
   } else if (rate == 1) {
-    mag5(data[sample+0]);
+    mag(data[sample+ch], 5);  // x5 magnification for display
   }
 #ifdef ARDUINO_RASPBERRY_PI_PICO_W
   if (rate == 0) {
-    mag10(rdata);
+    mag(rdata, 10);           // x10 magnification for WEB
   } else if (rate == 1) {
-    mag5(rdata);
+    mag(rdata, 5);            // x5 magnification for WEB
   }
 #endif
 }

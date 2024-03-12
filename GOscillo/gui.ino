@@ -180,7 +180,7 @@ int touch_diff(uint16_t x) {
 
 void low_touch_base(uint16_t x) {
   if (x < 60) {             // CH2 mode
-    if (rate <= RATE_ILV && ch0_mode != MODE_OFF) {
+    if (rate < RATE_DUAL && ch0_mode != MODE_OFF) {
       ch0_mode = MODE_OFF;
       ch1_mode = MODE_ON;
       display.fillScreen(BGCOLOR);
@@ -656,7 +656,7 @@ void menu_sw(byte sw) {
       else
         ch1_mode = MODE_ON;
     } else if (sw == BTN_LEFT) {  // CH1 - ON/OFF
-      if (rate <= RATE_ILV) {
+      if (rate < RATE_DUAL) {
         ch0_mode = MODE_OFF;
         ch1_mode = MODE_ON;
         display.fillScreen(BGCOLOR);
