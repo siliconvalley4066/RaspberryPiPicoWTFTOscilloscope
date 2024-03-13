@@ -8,6 +8,18 @@ The settings are controled on the touch screen of the TFT LCD and by the 5 direc
 You can view the oscilloscope screen on the WEB browser of the PC or the tablet or the smartphone.
 It contains Pulse Generator, DDS Function Generator and Frequency Counter.
 
+Specifications:
+<li>Dual input channel</li>
+<li>Input voltage range 0 to 3.3V</li>
+<li>12 bit ADC 500 ksps single channel, 250 ksps dual channel</li>
+<li>Measures minimum, maximum and average values</li>
+<li>Measures frequency and duty cycle</li>
+<li>Spectrum FFT analysis</li>
+<li>Sampling rate selection</li>
+<li>Built in Pulse Generator</li>
+<li>Built in DDS Function Generator</li>
+<br>
+
 The source codes can be compiled for Raspberry Pi Pico (not W) without WEB functions.
 
 For WEB operations, edit the source code WebTask.ino and replace your Access Point and the password.
