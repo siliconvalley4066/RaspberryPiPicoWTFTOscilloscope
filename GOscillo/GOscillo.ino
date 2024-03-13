@@ -377,7 +377,7 @@ void ClearAndDrawDot(int i) {
 
 void scaleDataArray(byte ad_ch, int trig_point)
 {
-  byte *pdata, ch_mode, range;
+  byte *pdata, ch_mode, range, ch;
   short ch_off;
   uint16_t *idata, *qdata, *rdata;
   long a, b;
