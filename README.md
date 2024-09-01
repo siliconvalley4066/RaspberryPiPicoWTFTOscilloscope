@@ -56,7 +56,13 @@ in the file GOscillo.ino.
 The magnification applies sin(x)/x interpolation.
 
 Schematics:<br>
-<img src="RPPicoTFTOscillo.png">
+<img src="RPPicoTFTOscillo.png"><br>
+There is no software support for input attenuation yet.
+
+Schematics for RP2040-Zero:<br>
+Select the board "Waveshare RP2040 Zero" in the Arduino IDE<br>
+<img src="RP2040ZeroTFTOscillo.png"><br>
+There is no software support for input attenuation yet.
 
 Description is here, although it is written in Japanese language:
 http://harahore.g2.xrea.com/RaspberryPiPico/RPPicoTFTOscillo.html
