@@ -30,7 +30,7 @@ void pulse_init() {
 #else
 double pulse_frq(void) {          // 7.48Hz <= freq <= 62.5MHz
   int divide = range_div[p_range];
-  return(sys_clk / (((long)count + 1) * divide));
+  return(sys_clk / ((double)((long)count + 1) * (double)divide));
 }
 
 void set_pulse_frq(float freq) {  // 7.48Hz <= freq <= 62.5MHz

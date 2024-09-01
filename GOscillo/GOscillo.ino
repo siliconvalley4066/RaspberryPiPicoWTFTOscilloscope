@@ -1,5 +1,5 @@
 /*
- * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.22
+ * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.23
  * The max software loop sampling rates are 250ksps with 2 channels and 500ksps with a channel.
  * + Pulse Generator
  * + PWM DDS Function Generator (23 waveforms)
@@ -39,6 +39,12 @@ double vReal[FFT_N]; // Real part array, actually float type
 double vImag[FFT_N]; // Imaginary part array
 ArduinoFFT<double> FFT = ArduinoFFT<double>(vReal, vImag, FFT_N, 1.0);  // Create FFT object
 
+#if defined(ARDUINO_WAVESHARE_RP2040_ZERO)
+#include <Adafruit_NeoPixel.h>
+#define DIN_PIN   16  // NeoPixel output pin is GP16
+Adafruit_NeoPixel pixels(1, DIN_PIN, NEO_GRB + NEO_KHZ800);
+#endif
+
 float waveFreq[2];             // frequency (Hz)
 float waveDuty[2];             // duty ratio (%)
 int dataMin[2];                // buffer minimum value (smallest=0)
@@ -68,8 +74,10 @@ const long VREF[] = {83, 165, 413, 825, 1650}; // reference voltage 3.3V ->  82.
                                         //                        -> 413 : 0.2V/div
                                         //                        -> 825 : 100mV/div
                                         //                        -> 1650 : 50mV/div
+                                        // 3.3V / attn * DOTS_DIV / vdiv
 //const int MILLIVOL_per_dot[] = {100, 50, 20, 10, 5}; // mV/dot
-const int ac_offset[] PROGMEM = {3072, 512, -1043, -1552, -1804}; // for Web
+const int ac_offset[] PROGMEM = {2917, 434, -1055, -1552, -1800}; // 4 div offset
+//                            = 4 * vdiv / 3.3 * 4096 - 2048
 const int MODE_ON = 0;
 const int MODE_INV = 1;
 const int MODE_OFF = 2;
@@ -85,6 +93,7 @@ const int TRIG_E_DN = 1;
 #define RATE_MAX 18
 #define RATE_DMA 4
 #define RATE_DUAL 3
+#define RATE_SLOW 10
 #define RATE_ROLL 12
 #define ITEM_MAX 29
 #define RATE_MAG 1
@@ -114,12 +123,21 @@ int trigger_ad;
 float sys_clk;      // System clock is typically 125MHz, eventually 133MHz
 volatile bool wfft, wdds;
 
+#if defined(ARDUINO_WAVESHARE_RP2040_ZERO)
+#define LEFTPIN   15  // LEFT
+#define RIGHTPIN  14  // RIGHT
+#define UPPIN      6  // UP
+#define DOWNPIN    5  // DOWN
+#define CH0DCSW   29  // DC/AC switch ch0
+#define CH1DCSW   28  // DC/AC switch ch1
+#else
 #define LEFTPIN   18  // LEFT
 #define RIGHTPIN  19  // RIGHT
 #define UPPIN     20  // UP
 #define DOWNPIN   21  // DOWN
 #define CH0DCSW   16  // DC/AC switch ch0
 #define CH1DCSW   17  // DC/AC switch ch1
+#endif
 
 #define BGCOLOR   TFT_BLACK
 #define GRIDCOLOR TFT_DARKGREY
@@ -146,7 +164,11 @@ void setup(){
   pinMode(DOWNPIN, INPUT_PULLUP);   // down
   pinMode(RIGHTPIN, INPUT_PULLUP);  // right
   pinMode(LEFTPIN, INPUT_PULLUP);   // left
+#if defined(ARDUINO_WAVESHARE_RP2040_ZERO)
+  pixels.begin();                   // NeoPixel start
+#else
   pinMode(LED_BUILTIN, OUTPUT);     // sets the digital pin as output
+#endif
 #ifndef NOLCD
   display.init();                    // initialise the library
   display.setRotation(3);
@@ -490,7 +512,7 @@ void loop() {
   unsigned long auto_time;
 
   timeExec = 100;
-  digitalWrite(LED_BUILTIN, LED_ON);
+  led_on();
   if (rate > RATE_DMA) {
     adc_set_round_robin(0); // de-activate round robin
     set_trigger_ad();
@@ -510,7 +532,7 @@ void loop() {
         }
         oad = ad;
 
-        if (rate > 10)
+        if (rate > RATE_SLOW)
           CheckSW();      // no need for fast sampling
         if (trig_mode == TRIG_SCAN)
           break;
@@ -537,7 +559,7 @@ void loop() {
     } else {                // dual channel 0.4ms, 0.8ms, 2ms sampling
       sample_dual_ms(HREF[rate] / 10);
     }
-    digitalWrite(LED_BUILTIN, LED_OFF);
+    led_off();
     draw_screen();
   } else if (Start) { // 4ms - 400ms sampling
     timeExec = 5000;
@@ -586,7 +608,7 @@ void loop() {
     DrawGrid(disp_leng);  // right side grid   
 #endif
     // Serial.println(millis()-st0);
-    digitalWrite(LED_BUILTIN, LED_OFF);
+    led_off();
 //    DrawGrid();
     DrawText();
   } else {
@@ -826,6 +848,24 @@ float freqhref() {
   return (float) HREF[rate];
 }
 
+#if defined(ARDUINO_WAVESHARE_RP2040_ZERO)
+void led_on(void) {
+  pixels.setPixelColor(0, pixels.Color(0, 16, 0)); pixels.show(); // green
+}
+
+void led_off(void) {
+  pixels.setPixelColor(0, pixels.Color(0, 0, 0)); pixels.show();  // off
+}
+#else
+void led_on(void) {
+  digitalWrite(LED_BUILTIN, LED_ON);
+}
+
+void led_off(void) {
+  digitalWrite(LED_BUILTIN, LED_OFF);
+}
+#endif
+
 #ifdef EEPROM_START
 void saveEEPROM() {                   // Save the setting value in EEPROM after waiting a while after the button operation.
   int p = EEPROM_START;
@@ -884,8 +924,6 @@ void set_default() {
   duty = 128;     // PWM 50%
   p_range = 0;    // PWM range
   count = 12499;  // PWM 10kHz
-//  p_range = 7;    // PWM range
-//  count = 62499;  // PWM 500Hz
   dds_mode = false;
   wave_id = 0;    // sine wave
   ifreq = 23841;  // 238.41Hz
