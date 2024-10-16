@@ -1,4 +1,8 @@
+#if defined(ARDUINO_WAVESHARE_RP2040_ZERO)
 #define PWMPin 6
+#else
+#define PWMPin 0
+#endif
 
 byte duty = 128; // duty ratio = duty/256
 byte p_range = 0;
@@ -48,9 +52,9 @@ void pulse_init() {
   p_range = constrain(p_range, 0, 8);
   divide = range_div[p_range];
 
-  // Tell GPIO 6 is allocated to the PWM
+  // Tell GPIO is allocated to the PWM
   gpio_set_function(PWMPin, GPIO_FUNC_PWM);
-  // Find out which PWM slice is connected to GPIO 6
+  // Find out which PWM slice is connected to GPIO
   slice_num = pwm_gpio_to_slice_num(PWMPin);
   setCounter(divide);           // set divider
   pwm_set_wrap(slice_num, count);
