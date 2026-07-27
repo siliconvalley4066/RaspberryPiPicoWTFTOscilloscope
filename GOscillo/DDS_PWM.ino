@@ -24,7 +24,7 @@ const char Wavename[][5] PROGMEM = {"Sine", "Saw", "RSaw", "Tri", "Rect",
 const byte wave_num = (sizeof(wavetable) / sizeof(&sine256));
 long ifreq = 23841; // frequency * 100 for 0.01Hz resolution
 byte wave_id = 0;
-static word slice_num2; // GP2 PWM slice number
+static word slice_num2; // GPIO PWM slice number
 #if defined(ARDUINO_WAVESHARE_RP2040_ZERO)
 #define DDSPin 4
 #else
