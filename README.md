@@ -51,8 +51,8 @@ For WEB only display, in case no LCD display is connected, un-comment
 </pre>
 in the file GOscillo.ino.
 
-At 5 usec/div range (2 Msps), ADC is overclocked to 192MHz.<br>
-At 10 usec/div range (1 Msps), ADC is overclocked to 96MHz.<br>
+At 12.5 usec/div range (2 Msps), ADC is overclocked to 192MHz.<br>
+At 25 usec/div range (1 Msps), ADC is overclocked to 96MHz.<br>
 So, there may be some decrease in accuracy.<br>
 The magnification applies sin(x)/x interpolation.
 
