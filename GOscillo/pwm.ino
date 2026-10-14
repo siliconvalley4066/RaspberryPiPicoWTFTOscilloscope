@@ -34,15 +34,16 @@ void pulse_init() {
 #else
 double pulse_frq(void) {          // 7.48Hz <= freq <= 62.5MHz
   int divide = range_div[p_range];
-  return(sys_clk / ((double)((long)count + 1) * (double)divide));
+  return(clock_get_hz(clk_sys) / ((double)((long)count + 1) * (double)divide));
 }
 
 void set_pulse_frq(float freq) {  // 7.48Hz <= freq <= 62.5MHz
-  if (freq > (float)(sys_clk / 2)) freq = sys_clk / 2;
-  p_range = constrain(9 - int(10.0 - log(sys_clk / 32768.0 / freq)/log(2)), 0, 8);
+  uint32_t sys_hz = clock_get_hz(clk_sys);
+  if (freq > (float)(sys_hz / 2)) freq = sys_hz / 2;
+  p_range = constrain(9 - int(10.0 - log(sys_hz / 32768.0 / freq)/log(2)), 0, 8);
   int divide = range_div[p_range];
   setCounter(divide);
-  count = (float)sys_clk/freq/(float)divide - 1;
+  count = (float)sys_hz/freq/(float)divide - 1;
   pwm_set_wrap(slice_num, count);
   setduty();
 }
@@ -104,9 +105,6 @@ void update_frq(int diff) {
 #ifndef NOLCD
 void disp_pulse_frq(void) {
   float freq = pulse_frq();
-  if (freq < 10000000.0) {
-    display.print(" ");
-  }
   if (freq < 10.0) {
     display.print(freq, 5);
   } else if (freq < 100.0) {
@@ -118,12 +116,11 @@ void disp_pulse_frq(void) {
   } else if (freq < 100000.0) {
     display.print(freq, 1);
   } else if (freq < 1000000.0) {
-    display.print(" ");
-    display.print(freq, 0);
+    display.print(freq * 1e-3, 2); display.print('k');
   } else if (freq < 10000000.0) {
-    display.print(freq, 0);
+    display.print(freq * 1e-6, 4); display.print('M');
   } else {
-    display.print(freq, 0);
+    display.print(freq * 1e-6, 3); display.print('M');
   }
   display.print("Hz ");
 }

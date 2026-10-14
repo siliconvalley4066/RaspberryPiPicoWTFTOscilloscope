@@ -48,7 +48,7 @@ void CheckTouch() {
     } else if (x < 180) {     // Rate
       if (item != SEL_RATE) {
       item = SEL_RATE;
-      } else if (rate > RATE_MAG) {
+      } else if (rate < RATE_ROLL) {
         switch (time_mag) {
         case 1:
           time_mag = 2;
@@ -85,7 +85,7 @@ void CheckTouch() {
   } else if ((y > 30 && y < 210) & (x < (LCD_WIDTH - 35))) {  // avoid conflict with trigger level
     switch (item) {
     case SEL_RATE:
-      if (time_mag < 2 || rate <= RATE_MAG) {
+      if (time_mag < 2 || rate >= RATE_ROLL) {
         if (x < (LCD_WIDTH / 2)) {  // minus
           updown_rate(7);         // slow
         } else {                    // plus
@@ -349,7 +349,7 @@ void disp_ch1_range() {
   int color;
   if (item == SEL_RANGE2) {
     color = HIGHCOLOR;
-  } else if (ch1_mode == MODE_OFF || rate < RATE_DUAL) {
+  } else if (ch1_mode == MODE_OFF || (rate < RATE_DUAL && ch0_mode != MODE_OFF)) {
     color = OFFCOLOR;
   } else {
     color = TXTCOLOR;
@@ -379,8 +379,10 @@ void disp_trig_mode() {
   display.print(TRIG_Modes[trig_mode]);
   display.print(' ');
 }
+#endif
 
 void DrawText() {
+#ifndef NOLCD
   if (info_mode & INFO_OFF)
     return;
   if (info_mode & INFO_BIG) {
@@ -407,8 +409,13 @@ void DrawText() {
   DrawText_big();
   if (!fft_mode)
     draw_trig_level((trig_ch == ad_ch0) ? CH1COLOR : CH2COLOR); // draw trig_lv mark
+#else
+  dataAnalize(0);
+  measure_frequency(0);
+#endif
 }
 
+#ifndef NOLCD
 void draw_trig_level(int color) { // draw trig_lv mark
   int x, y;
 
@@ -703,6 +710,10 @@ void updown_rate(byte sw) {
       rate = RATE_MAX;
     }
   }
+  if (rate >= RATE_ROLL) time_mag = 1;
+  if (rate == 0) setADCClockMSPS(2);  // 2Msps
+  if (rate == 1) setADCClockMSPS(1);  // 1Msps
+  if (rate > 1 && rate <= RATE_DMA) setADCClock500KSPS();  // ADC default USB clock
 }
 
 #ifndef NOLCD

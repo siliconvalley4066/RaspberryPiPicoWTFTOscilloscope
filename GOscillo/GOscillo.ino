@@ -1,6 +1,6 @@
 /*
- * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.26
- * The max software loop sampling rates are 250ksps with 2 channels and 500ksps with a channel.
+ * Raspberry Pi Pico W Oscilloscope using a 320x240 TFT and Web Version 1.27
+ * The max software loop sampling rates are 250ksps with 2 channels and 2Msps with a channel.
  * + Pulse Generator
  * + PWM DDS Function Generator (23 waveforms)
  * + Frequency Counter (kHz)
@@ -12,7 +12,8 @@
  * Copyright (c) 2009, Noriaki Mitsunaga
  */
 
-//#define NOLCD
+// #define NOLCD
+// #define NOWEB
 
 #ifndef NOLCD
 #include <SPI.h>
@@ -98,9 +99,8 @@ const int TRIG_E_DN = 1;
 #define RATE_SLOW 10
 #define RATE_ROLL 12
 #define ITEM_MAX 29
-#define RATE_MAG 1
-const char Rates[19][5] PROGMEM = {" 5us", "10us", "50us", "100u", "200u", "500u", " 1ms", " 2ms", " 5ms", "10ms", "20ms", "50ms", "100m", "200m", "0.5s", " 1s ", " 2s ", " 5s ", " 10s"};
-const unsigned long HREF[] PROGMEM = {20, 20, 20, 40, 80, 200, 400, 800, 2000, 4000, 8000, 20000, 40000, 80000, 200000, 400000, 800000, 2000000, 4000000, 8000000};
+const char Rates[19][5] PROGMEM = {"12.5", "25us", "50us", "100u", "200u", "500u", " 1ms", " 2ms", " 5ms", "10ms", "20ms", "50ms", "100m", "200m", "0.5s", " 1s ", " 2s ", " 5s ", " 10s"};
+const unsigned long HREF[] PROGMEM = {5, 10, 20, 40, 80, 200, 400, 800, 2000, 4000, 8000, 20000, 40000, 80000, 200000, 400000, 800000, 2000000, 4000000, 8000000};
 #define RANGE_MIN 0
 #define RANGE_MAX 4
 #define VRF 3.3
@@ -171,6 +171,7 @@ void setup(){
   pinMode(DOWNPIN, INPUT_PULLUP);   // down
   pinMode(RIGHTPIN, INPUT_PULLUP);  // right
   pinMode(LEFTPIN, INPUT_PULLUP);   // left
+  // setPERIClock48MHz();
 #if defined(ARDUINO_WAVESHARE_RP2040_ZERO)
   pixels.begin();                   // NeoPixel start
 #else
@@ -252,7 +253,6 @@ void DrawGrid() {
     }
   }
 }
-#endif
 #endif
 
 unsigned long fcount = 0;
@@ -357,6 +357,7 @@ void ClearAndDrawDot(int i) {
   }
 #endif
 }
+#endif
 
 void scaleDataArray(byte ad_ch, int trig_point)
 {
@@ -404,21 +405,15 @@ void scaleDataArray(byte ad_ch, int trig_point)
     ++idata;
 #endif
   }
-  int mag_mag = time_mag;
-  if (rate == 0) {
-    mag_mag = 10; mag_pos = 0;  // x10 magnification for display
-  } else if (rate == 1) {
-    mag_mag = 5; mag_pos = 0;   // x5 magnification for display
-  }
   if (rate < RATE_ROLL) {
-    switch (mag_mag) {
+    switch (time_mag) {
     case 2:
     case 5:
     case 10:
-      mag_pos = constrain(mag_pos, 0, SAMPLES - SAMPLES/mag_mag - 5);
-      mag(data[sample+ch], mag_mag, mag_pos); // magnify timebase for display
+      mag_pos = constrain(mag_pos, 0, SAMPLES - SAMPLES/time_mag - 5);
+      mag(data[sample+ch], time_mag, mag_pos); // magnify timebase for display
 #ifndef NOWEB
-      mag(rdata, mag_mag, mag_pos);           // magnify timebase for WEB
+      mag(rdata, time_mag, mag_pos);           // magnify timebase for WEB
 #endif
       break;
     default:
@@ -616,9 +611,9 @@ void draw_screen() {
 #ifndef NOLCD
     DrawGrid();
     ClearAndDrawGraph();
+    mag_bar();
 #endif
     DrawText();
-    mag_bar();
 #ifndef NOWEB
     if (ch0_mode == MODE_OFF) payload[0] = -1;
     if (ch1_mode == MODE_OFF) payload[SAMPLES] = -1;
