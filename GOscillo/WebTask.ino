@@ -94,7 +94,7 @@ void handle_rate() {
     }
     String strrate;
     strrate = Rates[nrate];
-    server.send(200, "text/html", strrate+((nrate > RATE_DMA)?"":((nrate > RATE_MAG)?" DMA":" MAG")));  // response 200, send OK
+    server.send(200, "text/html", strrate+((nrate > RATE_DMA)?"":" DMA"));  // response 200, send OK
   }
 }
 
@@ -776,6 +776,7 @@ Hz</label>
 </div>
 
 <label>CH1 frequency: </label><label id="ch1_freq"></label>
+
 </body>
 </html>
 )=====";
@@ -791,7 +792,7 @@ Hz</label>
     ch2acdc = "DC ";
 
   html.replace("%RATE%", Rates[rate]);
-  html.replace("%REALDMA%", (rate > RATE_DMA)?"":((rate > RATE_MAG)?"DMA":"MAG"));
+  html.replace("%REALDMA%", (rate > RATE_DMA)?"":"DMA");
   html.replace("%RANGE1%", ch1acdc + Ranges[range0]);
   html.replace("%RANGE2%", ch2acdc + Ranges[range1]);
   html.replace("%TRIGCH%", trig_ch==ad_ch0?"ch1":"ch2");
@@ -834,7 +835,7 @@ void handleNotFound(void) {
 
 void setup1() {
   Serial.begin(115200);
-//  Serial.printf("CORE0 = %d\n", xPortGetCoreID());
+  // Serial.printf("CORE0 = %d\n", xPortGetCoreID());
 #ifdef WIFI_ACCESS_POINT
   WiFi.disconnect(true);
   delay(1000);
@@ -851,8 +852,8 @@ void setup1() {
 #endif
   // print out the IP address of the Raspberry Pi Pico W
   Serial.print("WiFi Connected. IP = "); Serial.println(WiFi.localIP());
-//  Serial.print("WiFi Connected. GW = "); Serial.println(WiFi.gatewayIP());
-//  Serial.print("WiFi Connected. DNS = "); Serial.println(WiFi.dnsIP());
+  // Serial.print("WiFi Connected. GW = "); Serial.println(WiFi.gatewayIP());
+  // Serial.print("WiFi Connected. DNS = "); Serial.println(WiFi.dnsIP());
 
   if (MDNS.begin("picow")) {
     Serial.println("MDNS responder started");
